@@ -14,12 +14,6 @@ export default function Navbar({ activeTab, setActiveTab, health, onOpenSOSModal
             <h1 className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
               JALDHRISHTI
             </h1>
-            <span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              Team Enigma
-            </span>
-            <span className="text-[10px] font-medium tracking-wide uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              SIH Prototype
-            </span>
           </div>
           <p className="text-xs text-slate-400 hidden sm:block">
             AI/ML Flood Risk Prediction & Safe Evacuation Routing · Assam
