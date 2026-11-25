@@ -118,6 +118,8 @@ class SOSRequest(Base):
     water_depth_level = Column(String(32), nullable=False)  # Ankle, Knee, Waist, Chest, Submerged
     urgency_score = Column(Float, default=0.0, nullable=False, index=True)  # 0.0 to 100.0
     status = Column(String(32), default="Pending", nullable=False, index=True)  # Pending, Dispatched, Rescued, Cancelled
+    assigned_team = Column(String(64), nullable=True)
+    estimated_eta_min = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
     is_simulated = Column(Boolean, default=True, nullable=False)  # Rule 3 requirement
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -141,6 +143,8 @@ class SOSRequest(Base):
             "water_depth_level": self.water_depth_level,
             "urgency_score": round(self.urgency_score, 1),
             "status": self.status,
+            "assigned_team": self.assigned_team,
+            "estimated_eta_min": self.estimated_eta_min,
             "notes": self.notes,
             "is_simulated": self.is_simulated,
             "created_at": self.created_at.isoformat() if self.created_at else None,

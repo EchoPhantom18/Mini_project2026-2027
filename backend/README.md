@@ -181,7 +181,25 @@ Multi-criteria ranking engine recommending optimal relief shelters for evacuees.
 
 ### `GET /sos` and `POST /sos`
 - `GET /sos`: Returns citizen distress calls ranked in descending priority by calculated urgency score.
-- `POST /sos`: Submits new citizen distress call; calculates urgency score from water depth and vulnerable individuals.
+- `POST /sos`: Submits new citizen distress call; calculates calibrated urgency score considering water depth, vulnerability, and surrounding zone flood risk.
+
+---
+
+### `GET /sos/triage`
+Authority Command Dashboard endpoint: returns the active rescue triage queue sorted by life-safety urgency score.
+- **Urgency Formula**:
+  $$\text{Urgency} = \text{Base}(\text{Water Depth}) + \text{Vulnerabilities} + \text{Zone Flood Risk} + \text{Temporal Escalation}$$
+  - Water depths: `Submerged` (90), `Chest` (75), `Waist` (50), `Knee` (30), `Ankle` (15)
+  - Boosters: Medical Emergency (+25), Infants (+15), Elderly (+10), Group size (+1/person up to +10), Critical Zone (+15)
+  - Priority Tiers: **Critical** ($\ge 85$), **High** ($65-84$), **Moderate** ($40-64$), **Low** ($< 40$)
+- Includes aggregate statistics: pending requests, people at risk, pending medical emergencies, and priority tier breakdown.
+- Automatically links the closest active relief shelter for each distress call to streamline evacuee transfer.
+
+---
+
+### `GET /sos/{id}` and `PATCH /sos/{id}/status`
+- `GET /sos/{id}`: Detailed view of a single SOS distress record.
+- `PATCH /sos/{id}/status`: Updates rescue operational status (`Pending` $\to$ `Dispatched` $\to$ `Rescued` / `Cancelled`), assigns a rescue team (e.g. `SDRF Unit 4`), and sets estimated arrival time in minutes.
 
 ---
 
@@ -195,4 +213,4 @@ Returns measured evaluation metrics from 5-fold District GroupKFold validation (
 ```powershell
 python -m pytest backend/ -v
 ```
-All 28 tests execute in under 6 seconds.
+All 46 tests execute in under 12 seconds.

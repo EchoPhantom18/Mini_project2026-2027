@@ -138,6 +138,8 @@ class SOSResponse(BaseModel):
     water_depth_level: str
     urgency_score: float
     status: str
+    assigned_team: Optional[str] = None
+    estimated_eta_min: Optional[int] = None
     notes: Optional[str] = None
     is_simulated: bool
     created_at: Optional[str] = None
@@ -279,5 +281,75 @@ class ShelterRecommendationResponse(BaseModel):
     total_shelters_evaluated: int
     recommended_shelters: List[ShelterRecommendationItem]
     simulated: bool
+
+
+# ===========================================================================
+# Step 6 Schemas: SOS Distress Urgency Triage & Prioritization
+# ===========================================================================
+
+class SOSTriageUpdateRequest(BaseModel):
+    """Payload for updating rescue status, assigning dispatch teams, and setting ETA."""
+    status: str = Field(..., description="Operational status: Pending, Dispatched, Rescued, Cancelled")
+    assigned_team: Optional[str] = Field(default=None, description="Rescue unit designation (e.g., 'SDRF Boat Team 3')")
+    estimated_eta_min: Optional[int] = Field(default=None, ge=1, le=1440, description="Estimated rescue team arrival in minutes")
+    notes: Optional[str] = Field(default=None, description="Operational update notes")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "status": "Dispatched",
+                "assigned_team": "SDRF Unit 4 (Inflatable Boat)",
+                "estimated_eta_min": 25,
+                "notes": "Team dispatched from Boragaon base"
+            }
+        }
+    }
+
+
+class SOSTriageItem(BaseModel):
+    """Single SOS distress call with computed urgency and triage details."""
+    id: int
+    citizen_name: str
+    phone: str
+    lat: float
+    lon: float
+    zone_id: Optional[str] = None
+    zone_flood_risk: float
+    people_count: int
+    has_elderly: bool
+    has_infants: bool
+    has_medical_emergency: bool
+    water_depth_level: str
+    urgency_score: float
+    priority_level: str
+    status: str
+    assigned_team: Optional[str] = None
+    estimated_eta_min: Optional[int] = None
+    queue_position: int
+    nearest_shelter: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+    is_simulated: bool = True
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class SOSTriageSummary(BaseModel):
+    """Aggregate statistics for authority rescue command dashboard."""
+    total_requests: int
+    pending_requests: int
+    dispatched_requests: int
+    rescued_requests: int
+    cancelled_requests: int
+    total_people_at_risk: int
+    medical_emergencies_pending: int
+    priority_breakdown: Dict[str, int]
+
+
+class SOSTriageResponse(BaseModel):
+    """Comprehensive rescue triage queue response."""
+    district: str
+    summary: SOSTriageSummary
+    queue: List[SOSTriageItem]
+
 
 

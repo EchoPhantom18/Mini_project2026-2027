@@ -89,6 +89,8 @@ CREATE TABLE sos_requests (
     water_depth_level VARCHAR(32) NOT NULL CHECK (water_depth_level IN ('Ankle', 'Knee', 'Waist', 'Chest', 'Submerged')),
     urgency_score DOUBLE PRECISION NOT NULL DEFAULT 0.0 CHECK (urgency_score >= 0.0 AND urgency_score <= 100.0),
     status VARCHAR(32) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Dispatched', 'Rescued', 'Cancelled')),
+    assigned_team VARCHAR(64),
+    estimated_eta_min INTEGER,
     notes TEXT,
     is_simulated BOOLEAN NOT NULL DEFAULT TRUE,  -- Rule 3: demo SOS records must be explicitly marked SIMULATED
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

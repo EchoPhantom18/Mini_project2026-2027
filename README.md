@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python)](https://python.org)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E.svg?logo=scikitlearn)](https://scikit-learn.org)
 [![PostGIS](https://img.shields.io/badge/PostGIS-15--3.3-336791.svg?logo=postgresql)](https://postgis.net)
-[![Tests](https://img.shields.io/badge/Tests-28%2F28%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-46%2F46%20Passing-brightgreen.svg)]()
 
 ---
 
@@ -17,8 +17,8 @@
 
 1. **Hyperlocal Flood Risk Forecasting**: 0–100 risk score per 1 km × 1 km grid zone (20,464 zones across 7 Assam study districts) based on topography, river proximity, drainage density, and multi-day antecedent rainfall.
 2. **Safe Evacuation Routing**: Dynamic Dijkstra/A* routing where road costs penalize flood exposure, steering evacuees away from hazardous routes and automatically detouring around critical submerged roads.
-3. **Emergency Shelter Management**: Verified relief shelters (such as Sarusajai Stadium, Cotton University, IIT Guwahati) prioritized by distance, terrain elevation (DEM), and live capacity.
-4. **Citizen SOS Distress Management**: Triage queue ranking distress calls by calculated urgency (water depth, elderly, infants, medical emergencies).
+3. **Emergency Shelter Recommendation**: Multi-criteria ranking prioritizing shelters by proximity, live enclosing zone flood safety, SRTM DEM elevation, and available bed capacity.
+4. **Citizen SOS Distress Management & Triage**: Authority triage queue ranking distress calls by calculated urgency (water depth, elderly, infants, medical emergencies, zone flood risk) with rescue team dispatch management.
 
 ---
 
@@ -43,7 +43,9 @@ mini_project/
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── db/                  # PostgreSQL / PostGIS & SQLite ORM models and seeders
 │   ├── routing/             # NetworkX A*/Dijkstra risk-weighted routing engine
-│   └── test_*.py            # 28 automated pytest unit & integration tests
+│   ├── shelters/            # Multi-criteria shelter ranking engine
+│   ├── sos/                 # Urgency scoring, prioritization & dispatch triage
+│   └── test_*.py            # 46 automated pytest unit & integration tests
 ├── ml/
 │   ├── config.py            # Coordinate reference systems (EPSG:32646), physical features
 │   ├── build_features.py    # Spatial feature engineering pipeline
@@ -81,7 +83,7 @@ Interactive Swagger API documentation will be available at:
 ```bash
 python -m pytest backend/ -v
 ```
-All **28/28 tests** execute in under 6 seconds.
+All **46/46 tests** execute in under 12 seconds.
 
 ---
 
@@ -94,7 +96,10 @@ All **28/28 tests** execute in under 6 seconds.
 | `GET` | `/zones` | Returns GeoJSON FeatureCollection with live zone risk scores |
 | `POST` | `/route` | Computes shortest path vs flood-safe evacuation route |
 | `GET` | `/shelters` | Lists relief shelters with live capacity & DEM elevation |
+| `GET` | `/shelters/recommend` | Multi-criteria ranking of nearest & safest emergency shelters |
 | `POST` | `/sos` | Submits emergency rescue request with urgency scoring |
+| `GET` | `/sos/triage` | Ranked priority rescue queue for emergency responders (NDRF/SDRF) |
+| `PATCH` | `/sos/{id}/status` | Dispatches rescue unit, sets ETA, and updates operational lifecycle |
 | `GET` | `/model/metrics` | Returns measured GroupKFold validation metrics |
 
 ---

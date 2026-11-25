@@ -32,12 +32,15 @@ from backend.schemas import (
     RouteRequest,
     RouteResponse,
     ShelterRecommendationRequest,
-    ShelterRecommendationResponse
+    ShelterRecommendationResponse,
+    SOSTriageUpdateRequest,
+    SOSTriageResponse
 )
 from backend import model_service
 from backend.routing.router import find_safe_route
 from backend.routing.graph_service import graph_service
 from backend.shelters.recommender import recommend_shelters
+from backend.sos.triage import calculate_urgency_score, get_triage_queue, update_rescue_status
 from backend.db.session import get_db, init_db
 from backend.db.models import Shelter, SOSRequest, Zone
 from ml.config import STUDY_DISTRICTS, FEATURE_COLUMNS
@@ -100,6 +103,7 @@ def root():
             "shelters": "/shelters (GET)",
             "shelter_recommendation": "/shelters/recommend (GET/POST)",
             "sos": "/sos (GET/POST)",
+            "sos_triage": "/sos/triage (GET)",
             "districts": "/districts (GET)",
             "metrics": "/model/metrics (GET)"
         }
@@ -349,23 +353,13 @@ def submit_sos_request(
 ):
     """
     Allows citizens or field volunteers to submit an emergency rescue request.
-    Computes initial urgency score based on water depth and vulnerable individuals.
+    Computes calibrated urgency score based on water depth, medical emergency, infants, elderly,
+    group size, and enclosing zone flood risk.
     """
     try:
-        # Depth urgency weight
-        depth_weights = {"Ankle": 15, "Knee": 35, "Waist": 60, "Chest": 85, "Submerged": 100}
-        urgency = depth_weights.get(request.water_depth_level, 20)
-
-        # Vulnerability boosters
-        if request.has_medical_emergency:
-            urgency = min(100.0, urgency + 25.0)
-        if request.has_elderly:
-            urgency = min(100.0, urgency + 10.0)
-        if request.has_infants:
-            urgency = min(100.0, urgency + 10.0)
-
-        # Assign enclosing zone if coordinates match our grid
+        # 1. Assign enclosing zone if coordinates match our grid
         assigned_zone = None
+        zone_risk = 15.0  # Safe default baseline
         if model_service._GRID_GEOJSON is not None:
             from shapely.geometry import Point, shape
             pt = Point(request.lon, request.lat)
@@ -373,7 +367,18 @@ def submit_sos_request(
                 geom = shape(feat["geometry"])
                 if geom.contains(pt) or geom.distance(pt) < 0.005:
                     assigned_zone = feat["properties"]["zone_id"]
+                    zone_risk = feat["properties"].get("risk_score", 15.0)
                     break
+
+        # 2. Calculate comprehensive urgency score
+        urgency = calculate_urgency_score(
+            water_depth_level=request.water_depth_level,
+            has_medical_emergency=request.has_medical_emergency,
+            has_infants=request.has_infants,
+            has_elderly=request.has_elderly,
+            people_count=request.people_count,
+            zone_risk_score=zone_risk
+        )
 
         sos_record = SOSRequest(
             citizen_name=request.citizen_name,
@@ -386,7 +391,7 @@ def submit_sos_request(
             has_infants=request.has_infants,
             has_medical_emergency=request.has_medical_emergency,
             water_depth_level=request.water_depth_level,
-            urgency_score=round(float(urgency), 1),
+            urgency_score=urgency,
             status="Pending",
             notes=request.notes,
             is_simulated=request.is_simulated  # Explicitly preserve simulation flag
@@ -398,6 +403,72 @@ def submit_sos_request(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to submit SOS request: {str(e)}")
+
+
+@app.get("/sos/triage", response_model=SOSTriageResponse, tags=["SOS Management"])
+def get_sos_triage_dashboard(
+    status: Optional[str] = Query(None, description="Filter by status: Pending, Dispatched, Rescued, Cancelled, or all"),
+    priority: Optional[str] = Query(None, description="Filter by priority: Critical, High, Moderate, Low, or all"),
+    district: str = Query("Kamrup Metropolitan", description="Target district"),
+    db: Session = Depends(get_db)
+):
+    """
+    Emergency Authority Command Dashboard endpoint:
+    Returns the real-time rescue triage queue sorted by life-safety urgency score.
+    Associates each distress call with nearest active shelter for evacuee transport.
+    """
+    try:
+        triage_data = get_triage_queue(
+            db=db,
+            status_filter=status,
+            priority_filter=priority,
+            district=district
+        )
+        return triage_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch triage queue: {str(e)}")
+
+
+@app.get("/sos/{sos_id}", response_model=SOSResponse, tags=["SOS Management"])
+def get_single_sos_request(
+    sos_id: int,
+    db: Session = Depends(get_db)
+):
+    """Retrieves details of a specific SOS distress call by ID."""
+    req = db.query(SOSRequest).filter(SOSRequest.id == sos_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail=f"SOS request #{sos_id} not found.")
+    return req.to_dict()
+
+
+@app.patch("/sos/{sos_id}/status", response_model=SOSResponse, tags=["SOS Management"])
+def update_sos_dispatch_status(
+    sos_id: int,
+    update_data: SOSTriageUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Updates the operational lifecycle status, assigns a dispatch rescue unit, and sets ETA.
+    Permitted statuses: Pending, Dispatched, Rescued, Cancelled.
+    """
+    try:
+        updated_req = update_rescue_status(
+            sos_id=sos_id,
+            status=update_data.status,
+            db=db,
+            assigned_team=update_data.assigned_team,
+            estimated_eta_min=update_data.estimated_eta_min,
+            notes=update_data.notes
+        )
+        return updated_req.to_dict()
+    except KeyError as ke:
+        raise HTTPException(status_code=404, detail=str(ke))
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update SOS status: {str(e)}")
+
 
 
 # ===========================================================================

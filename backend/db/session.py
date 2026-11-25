@@ -61,9 +61,18 @@ def get_session():
 
 
 def init_db():
-    """Creates all database tables defined in models.py."""
+    """Creates all database tables defined in models.py and applies lightweight SQLite migrations."""
     eng = get_engine()
     Base.metadata.create_all(bind=eng)
+    if eng.url.drivername.startswith("sqlite"):
+        with eng.connect() as conn:
+            import sqlalchemy as sa
+            cols = [row[1] for row in conn.execute(sa.text("PRAGMA table_info(sos_requests)")).fetchall()]
+            if "assigned_team" not in cols:
+                conn.execute(sa.text("ALTER TABLE sos_requests ADD COLUMN assigned_team VARCHAR(64)"))
+            if "estimated_eta_min" not in cols:
+                conn.execute(sa.text("ALTER TABLE sos_requests ADD COLUMN estimated_eta_min INTEGER"))
+            conn.commit()
     print(f"[DB] Initialized database tables on {eng.url.drivername}")
 
 
