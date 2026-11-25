@@ -1,0 +1,183 @@
+{
+  "winning_model": "Random Forest",
+  "comparison": {
+    "random_forest": {
+      "model_name": "Random Forest",
+      "roc_auc": 0.7641,
+      "f1": 0.4453,
+      "precision": 0.3994,
+      "recall": 0.5033,
+      "brier_score": 0.1834,
+      "fold_details": [
+        {
+          "fold": 1,
+          "held_out_districts": [
+            "Nagaon"
+          ],
+          "precision": 0.5772,
+          "recall": 0.0771,
+          "f1": 0.136,
+          "roc_auc": 0.7193
+        },
+        {
+          "fold": 2,
+          "held_out_districts": [
+            "Dhubri"
+          ],
+          "precision": 0.373,
+          "recall": 0.9988,
+          "f1": 0.5432,
+          "roc_auc": 0.7434
+        },
+        {
+          "fold": 3,
+          "held_out_districts": [
+            "Dima Hasao"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "roc_auc": 0.7004
+        },
+        {
+          "fold": 4,
+          "held_out_districts": [
+            "Barpeta",
+            "Kamrup Metropolitan"
+          ],
+          "precision": 0.3901,
+          "recall": 0.2903,
+          "f1": 0.3329,
+          "roc_auc": 0.6054
+        },
+        {
+          "fold": 5,
+          "held_out_districts": [
+            "Morigaon",
+            "Dhemaji"
+          ],
+          "precision": 0.4851,
+          "recall": 0.4398,
+          "f1": 0.4613,
+          "roc_auc": 0.7104
+        }
+      ],
+      "calibration": {
+        "bin_predicted_prob": [
+          0.0691,
+          0.2911,
+          0.4934,
+          0.6777,
+          0.9105
+        ],
+        "bin_actual_fraction": [
+          0.0655,
+          0.2399,
+          0.3544,
+          0.3881,
+          0.4199
+        ]
+      }
+    },
+    "xgboost": {
+      "model_name": "XGBoost",
+      "roc_auc": 0.7359,
+      "f1": 0.432,
+      "precision": 0.3928,
+      "recall": 0.48,
+      "brier_score": 0.1952,
+      "fold_details": [
+        {
+          "fold": 1,
+          "held_out_districts": [
+            "Nagaon"
+          ],
+          "precision": 0.4312,
+          "recall": 0.1159,
+          "f1": 0.1826,
+          "roc_auc": 0.7171
+        },
+        {
+          "fold": 2,
+          "held_out_districts": [
+            "Dhubri"
+          ],
+          "precision": 0.3736,
+          "recall": 0.9984,
+          "f1": 0.5437,
+          "roc_auc": 0.7602
+        },
+        {
+          "fold": 3,
+          "held_out_districts": [
+            "Dima Hasao"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "roc_auc": 0.7562
+        },
+        {
+          "fold": 4,
+          "held_out_districts": [
+            "Barpeta",
+            "Kamrup Metropolitan"
+          ],
+          "precision": 0.3696,
+          "recall": 0.2275,
+          "f1": 0.2817,
+          "roc_auc": 0.5876
+        },
+        {
+          "fold": 5,
+          "held_out_districts": [
+            "Morigaon",
+            "Dhemaji"
+          ],
+          "precision": 0.4769,
+          "recall": 0.4101,
+          "f1": 0.441,
+          "roc_auc": 0.7051
+        }
+      ],
+      "calibration": {
+        "bin_predicted_prob": [
+          0.0629,
+          0.281,
+          0.4968,
+          0.69,
+          0.9256
+        ],
+        "bin_actual_fraction": [
+          0.1048,
+          0.2166,
+          0.3276,
+          0.3733,
+          0.4134
+        ]
+      }
+    }
+  },
+  "feature_importances": {
+    "elevation_mean": 0.3021,
+    "elevation_min": 0.3193,
+    "slope_mean": 0.1018,
+    "dist_to_river_m": 0.0218,
+    "drainage_density": 0.016,
+    "rain_7d_mm": 0.0735,
+    "rain_15d_mm": 0.0746,
+    "rain_30d_mm": 0.0908
+  },
+  "feature_columns": [
+    "elevation_mean",
+    "elevation_min",
+    "slope_mean",
+    "dist_to_river_m",
+    "drainage_density",
+    "rain_7d_mm",
+    "rain_15d_mm",
+    "rain_30d_mm"
+  ],
+  "total_training_samples": 438988,
+  "validation_strategy": "5-fold District GroupKFold (unseen district evaluation)"
+}
