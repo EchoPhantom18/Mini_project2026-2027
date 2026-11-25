@@ -15,9 +15,11 @@ Serves:
 
 from contextlib import asynccontextmanager
 from typing import Optional, List
+import os
 from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from backend.schemas import (
@@ -88,6 +90,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount built React frontend at /dashboard if production build exists
+FRONTEND_DIST_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+if os.path.exists(FRONTEND_DIST_PATH):
+    app.mount("/dashboard", StaticFiles(directory=FRONTEND_DIST_PATH, html=True), name="dashboard")
+
 
 @app.get("/", tags=["General"])
 def root():
@@ -98,8 +105,10 @@ def root():
         "team": "Team Enigma (Smart India Hackathon)",
         "version": "1.0.0",
         "docs_url": "/docs",
+        "dashboard_ui": "/dashboard",
         "demo_district": "Kamrup Metropolitan (Guwahati)",
         "endpoints": {
+            "dashboard": "/dashboard (Interactive React + Leaflet UI)",
             "health": "/health",
             "predict": "/predict (POST)",
             "zones": "/zones?district=Kamrup%20Metropolitan (GET)",
