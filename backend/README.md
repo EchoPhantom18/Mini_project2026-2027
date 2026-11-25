@@ -155,6 +155,30 @@ Returns verified emergency relief shelters with real DEM elevations, capacities,
 
 ---
 
+### `GET /shelters/recommend` and `POST /shelters/recommend`
+Multi-criteria ranking engine recommending optimal relief shelters for evacuees.
+
+**Scoring Criteria:**
+- **Proximity (40%)**: Haversine distance from citizen GPS location
+- **Zone Safety (30%)**: Live flood risk score of the shelter's enclosing 1 km zone
+- **Terrain Elevation (15%)**: Real SRTM DEM elevation (higher ground is safer)
+- **Available Capacity (15%)**: Spare bed capacity ($C_{\text{avail}} = \text{Capacity} - \text{Occupancy}$)
+
+**Safety Penalties:**
+- Critical flood zone ($R \ge 75$): Slashed by 75% with severe hazard warning.
+- Full capacity: Slashed by 60% with full capacity warning.
+- Inactive shelter: Score set to 0.
+
+**Query Parameters (GET) / Request Body (POST):**
+- `lat`, `lon`: Citizen GPS coordinates (e.g. `26.1445, 91.6631`)
+- `district` (default: `"Kamrup Metropolitan"`): Target district
+- `limit` (default: `3`): Number of top recommendations
+- `max_distance_km` (default: `30.0`): Maximum search radius
+- `include_route` (default: `true`): Generates safe evacuation route to top shelter
+- `simulated` (default: `false`): Flag for simulated scenario inputs
+
+---
+
 ### `GET /sos` and `POST /sos`
 - `GET /sos`: Returns citizen distress calls ranked in descending priority by calculated urgency score.
 - `POST /sos`: Submits new citizen distress call; calculates urgency score from water depth and vulnerable individuals.

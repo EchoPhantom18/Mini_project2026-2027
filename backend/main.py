@@ -30,11 +30,14 @@ from backend.schemas import (
     SOSCreateRequest,
     SOSResponse,
     RouteRequest,
-    RouteResponse
+    RouteResponse,
+    ShelterRecommendationRequest,
+    ShelterRecommendationResponse
 )
 from backend import model_service
 from backend.routing.router import find_safe_route
 from backend.routing.graph_service import graph_service
+from backend.shelters.recommender import recommend_shelters
 from backend.db.session import get_db, init_db
 from backend.db.models import Shelter, SOSRequest, Zone
 from ml.config import STUDY_DISTRICTS, FEATURE_COLUMNS
@@ -95,6 +98,7 @@ def root():
             "zones": "/zones?district=Kamrup%20Metropolitan (GET)",
             "route": "/route (GET/POST)",
             "shelters": "/shelters (GET)",
+            "shelter_recommendation": "/shelters/recommend (GET/POST)",
             "sos": "/sos (GET/POST)",
             "districts": "/districts (GET)",
             "metrics": "/model/metrics (GET)"
@@ -253,6 +257,71 @@ def get_shelters(
 
     shelters = query.all()
     return [s.to_dict() for s in shelters]
+
+
+@app.get("/shelters/recommend", response_model=ShelterRecommendationResponse, tags=["Shelters"])
+def recommend_safe_shelters(
+    lat: float = Query(..., ge=20.0, le=30.0, description="Citizen GPS latitude"),
+    lon: float = Query(..., ge=88.0, le=97.0, description="Citizen GPS longitude"),
+    district: str = Query("Kamrup Metropolitan", description="District context"),
+    limit: int = Query(3, ge=1, le=10, description="Number of recommendations"),
+    max_distance_km: float = Query(30.0, ge=1.0, le=100.0, description="Search radius in km"),
+    include_route: bool = Query(True, description="Whether to include safe evacuation path to top shelter"),
+    rain_7d: Optional[float] = Query(None, description="Optional 7-day rainfall scenario"),
+    rain_15d: Optional[float] = Query(None, description="Optional 15-day rainfall scenario"),
+    rain_30d: Optional[float] = Query(None, description="Optional 30-day rainfall scenario"),
+    simulated: bool = Query(False, description="Whether scenario is simulated"),
+    db: Session = Depends(get_db)
+):
+    """
+    Evaluates and ranks emergency relief shelters by multi-criteria suitability:
+    proximity, enclosing zone flood risk, SRTM DEM elevation, and available bed capacity.
+    """
+    try:
+        recommendations = recommend_shelters(
+            lat=lat,
+            lon=lon,
+            db=db,
+            district=district,
+            limit=limit,
+            max_distance_km=max_distance_km,
+            include_route=include_route,
+            rain_7d=rain_7d,
+            rain_15d=rain_15d,
+            rain_30d=rain_30d,
+            simulated=simulated
+        )
+        return recommendations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error recommending shelters: {str(e)}")
+
+
+@app.post("/shelters/recommend", response_model=ShelterRecommendationResponse, tags=["Shelters"])
+def recommend_safe_shelters_post(
+    request: ShelterRecommendationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    POST variant for shelter recommendation accepting JSON request payload.
+    """
+    try:
+        recommendations = recommend_shelters(
+            lat=request.lat,
+            lon=request.lon,
+            db=db,
+            district=request.district,
+            limit=request.limit,
+            max_distance_km=request.max_distance_km,
+            include_route=request.include_route,
+            rain_7d=request.rain_7d,
+            rain_15d=request.rain_15d,
+            rain_30d=request.rain_30d,
+            simulated=request.simulated
+        )
+        return recommendations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error recommending shelters: {str(e)}")
+
 
 
 @app.get("/sos", response_model=List[SOSResponse], tags=["SOS Management"])

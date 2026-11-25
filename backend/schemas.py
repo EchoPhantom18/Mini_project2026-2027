@@ -216,3 +216,68 @@ class RouteResponse(BaseModel):
     routes: Dict[str, RoutePathDetails]
     simulated: bool
 
+
+# ===========================================================================
+# Step 5 Schemas: Shelter Recommendation Engine
+# ===========================================================================
+
+class ShelterRecommendationRequest(BaseModel):
+    """Payload for finding nearest and safest emergency shelters."""
+    lat: float = Field(..., ge=20.0, le=30.0, description="Citizen GPS Latitude")
+    lon: float = Field(..., ge=88.0, le=97.0, description="Citizen GPS Longitude")
+    district: str = Field(default="Kamrup Metropolitan", description="District context")
+    limit: int = Field(default=3, ge=1, le=10, description="Number of top shelters to recommend")
+    max_distance_km: float = Field(default=30.0, ge=1.0, le=100.0, description="Search radius in kilometers")
+    include_route: bool = Field(default=True, description="Whether to include safe evacuation route to top shelter")
+    rain_7d: Optional[float] = Field(default=None, description="Optional what-if 7-day rainfall")
+    rain_15d: Optional[float] = Field(default=None, description="Optional what-if 15-day rainfall")
+    rain_30d: Optional[float] = Field(default=None, description="Optional what-if 30-day rainfall")
+    simulated: bool = Field(default=False, description="Whether scenario is simulated")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "lat": 26.1445,
+                "lon": 91.7362,
+                "district": "Kamrup Metropolitan",
+                "limit": 3,
+                "include_route": True,
+                "simulated": False
+            }
+        }
+    }
+
+
+class ShelterRecommendationItem(BaseModel):
+    """Recommended shelter with multi-criteria scores, live zone risk, and elevation."""
+    id: int
+    name: str
+    district: str
+    lat: float
+    lon: float
+    capacity: int
+    current_occupancy: int
+    available_capacity: int
+    elevation_m: float
+    status: str
+    contact_person: Optional[str] = None
+    contact_phone: Optional[str] = None
+    zone_id: Optional[str] = None
+    zone_risk_score: float
+    zone_risk_level: str
+    distance_km: float
+    suitability_score: float
+    suitability_rank: int
+    safety_warning: Optional[str] = None
+    is_simulated: bool = False
+    route_to_shelter: Optional[Dict[str, Any]] = None
+
+
+class ShelterRecommendationResponse(BaseModel):
+    """Response containing ranked shelter recommendations."""
+    citizen_location: Dict[str, float]
+    total_shelters_evaluated: int
+    recommended_shelters: List[ShelterRecommendationItem]
+    simulated: bool
+
+
