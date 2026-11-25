@@ -34,13 +34,17 @@ from backend.schemas import (
     ShelterRecommendationRequest,
     ShelterRecommendationResponse,
     SOSTriageUpdateRequest,
-    SOSTriageResponse
+    SOSTriageResponse,
+    SimulationRequest,
+    SimulationResponse,
+    SimulationPreset
 )
 from backend import model_service
 from backend.routing.router import find_safe_route
 from backend.routing.graph_service import graph_service
 from backend.shelters.recommender import recommend_shelters
 from backend.sos.triage import calculate_urgency_score, get_triage_queue, update_rescue_status
+from backend.simulation.simulator import run_flood_simulation, SIMULATION_PRESETS
 from backend.db.session import get_db, init_db
 from backend.db.models import Shelter, SOSRequest, Zone
 from ml.config import STUDY_DISTRICTS, FEATURE_COLUMNS
@@ -104,6 +108,8 @@ def root():
             "shelter_recommendation": "/shelters/recommend (GET/POST)",
             "sos": "/sos (GET/POST)",
             "sos_triage": "/sos/triage (GET)",
+            "simulate": "/simulate (POST)",
+            "simulation_presets": "/simulate/presets (GET)",
             "districts": "/districts (GET)",
             "metrics": "/model/metrics (GET)"
         }
@@ -535,6 +541,50 @@ def get_evacuation_route(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Routing calculation error: {str(e)}")
+
+
+# ===========================================================================
+# Step 7 Endpoints: What-If Flood Scenario Simulation
+# ===========================================================================
+
+@app.get("/simulate/presets", response_model=List[SimulationPreset], tags=["Simulation"])
+def get_simulation_presets():
+    """
+    Returns preconfigured what-if disaster simulation presets for authority drills.
+    Includes Monsoon Normal, Heavy Monsoon Surge, Extreme Cloudburst, and 100-Year Century Flood.
+    """
+    return SIMULATION_PRESETS
+
+
+@app.post("/simulate", response_model=SimulationResponse, tags=["Simulation"])
+def execute_flood_simulation(
+    request: SimulationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Executes a dynamic what-if disaster simulation:
+    Re-scores all 1 km grid zones with hypothetical rainfall parameters,
+    identifies road corridors severed, compromises to relief shelters, and SOS vulnerability shifts.
+    Output is strictly tagged 'simulated': true per Rule 3.
+    """
+    try:
+        result = run_flood_simulation(
+            rain_7d_mm=request.rain_7d_mm,
+            rain_15d_mm=request.rain_15d_mm,
+            rain_30d_mm=request.rain_30d_mm,
+            scenario_name=request.scenario_name,
+            district=request.district,
+            db=db,
+            baseline_7d=request.baseline_7d,
+            baseline_15d=request.baseline_15d,
+            baseline_30d=request.baseline_30d
+        )
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Simulation execution error: {str(e)}")
+
 
 
 

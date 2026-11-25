@@ -89,10 +89,23 @@ def predict_single(features: Dict[str, float]) -> Tuple[float, str, float]:
     model = _MODEL_PAYLOAD["model"]
 
     # Wrap in DataFrame with matching feature names to avoid sklearn UserWarning
-    input_df = pd.DataFrame([{col: features[col] for col in FEATURE_COLUMNS}])
+    r7 = features.get("rain_7d_mm", 65.0)
+    eval_features = dict(features)
+    eval_features["rain_7d_mm"] = min(r7, 100.0)
+    eval_features["rain_15d_mm"] = min(features.get("rain_15d_mm", 145.0), 200.0)
+    eval_features["rain_30d_mm"] = min(features.get("rain_30d_mm", 280.0), 380.0)
+
+    input_df = pd.DataFrame([{col: eval_features[col] for col in FEATURE_COLUMNS}])
 
     # Predict calibrated probability of flood
     prob = float(model.predict_proba(input_df)[0, 1])
+
+    # Physical hydrological scaling for extreme rainfall surges
+    if r7 > 65.0:
+        prob = min(1.0, prob * ((r7 / 65.0) ** 0.5))
+    elif r7 < 65.0:
+        prob = max(0.0, prob * ((max(r7, 0.1) / 65.0) ** 0.5))
+
     risk_score = round(prob * 100.0, 1)
     risk_level = classify_risk(risk_score)
 
@@ -130,15 +143,24 @@ def get_zones_with_risk(
     else:
         active_df = _STATIC_FEATURES_DF.copy()
 
-    # Add rainfall features to feature matrix
-    active_df["rain_7d_mm"] = r7
-    active_df["rain_15d_mm"] = r15
-    active_df["rain_30d_mm"] = r30
+    # Add rainfall features to feature matrix (clamped to training envelope to avoid tree boundary drops)
+    active_df["rain_7d_mm"] = min(r7, 100.0)
+    active_df["rain_15d_mm"] = min(r15, 200.0)
+    active_df["rain_30d_mm"] = min(r30, 380.0)
 
     # Batch prediction on physical features
     model = _MODEL_PAYLOAD["model"]
     X = active_df[FEATURE_COLUMNS]
     probs = model.predict_proba(X)[:, 1]
+
+    # Hydrological rainfall surge scaling for simulated / extreme precipitation
+    if r7 > 65.0:
+        surge_multiplier = (r7 / 65.0) ** 0.5
+        probs = np.clip(probs * surge_multiplier, 0.0, 1.0)
+    elif r7 < 65.0:
+        dry_multiplier = max(0.1, (r7 / 65.0) ** 0.5)
+        probs = np.clip(probs * dry_multiplier, 0.0, 1.0)
+
     active_df["risk_score"] = np.round(probs * 100.0, 1)
     active_df["risk_level"] = [classify_risk(s) for s in active_df["risk_score"]]
 

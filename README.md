@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python)](https://python.org)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E.svg?logo=scikitlearn)](https://scikit-learn.org)
 [![PostGIS](https://img.shields.io/badge/PostGIS-15--3.3-336791.svg?logo=postgresql)](https://postgis.net)
-[![Tests](https://img.shields.io/badge/Tests-46%2F46%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-52%2F52%20Passing-brightgreen.svg)]()
 
 ---
 
@@ -45,7 +45,8 @@ mini_project/
 │   ├── routing/             # NetworkX A*/Dijkstra risk-weighted routing engine
 │   ├── shelters/            # Multi-criteria shelter ranking engine
 │   ├── sos/                 # Urgency scoring, prioritization & dispatch triage
-│   └── test_*.py            # 46 automated pytest unit & integration tests
+│   ├── simulation/          # What-if scenario modeling & cascade impact engine
+│   └── test_*.py            # 52 automated pytest unit & integration tests
 ├── ml/
 │   ├── config.py            # Coordinate reference systems (EPSG:32646), physical features
 │   ├── build_features.py    # Spatial feature engineering pipeline
@@ -83,7 +84,7 @@ Interactive Swagger API documentation will be available at:
 ```bash
 python -m pytest backend/ -v
 ```
-All **46/46 tests** execute in under 12 seconds.
+All **52/52 tests** execute in under 10 seconds.
 
 ---
 
@@ -100,6 +101,8 @@ All **46/46 tests** execute in under 12 seconds.
 | `POST` | `/sos` | Submits emergency rescue request with urgency scoring |
 | `GET` | `/sos/triage` | Ranked priority rescue queue for emergency responders (NDRF/SDRF) |
 | `PATCH` | `/sos/{id}/status` | Dispatches rescue unit, sets ETA, and updates operational lifecycle |
+| `GET` | `/simulate/presets` | Predefined disaster drill simulation presets |
+| `POST` | `/simulate` | Executes what-if flood scenario modeling and cascade impact analysis |
 | `GET` | `/model/metrics` | Returns measured GroupKFold validation metrics |
 
 ---

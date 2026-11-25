@@ -203,6 +203,25 @@ Authority Command Dashboard endpoint: returns the active rescue triage queue sor
 
 ---
 
+### `GET /simulate/presets`
+Returns predefined disaster simulation presets for authority drills:
+- Monsoon Normal Seasonal Baseline ($65\text{mm} / 145\text{mm} / 280\text{mm}$)
+- Continuous Heavy Monsoon Downpour ($180\text{mm} / 320\text{mm} / 520\text{mm}$)
+- Kamrup Foothills Flash Cloudburst ($320\text{mm} / 480\text{mm} / 720\text{mm}$)
+- 100-Year Brahmaputra River Overflow ($480\text{mm} / 750\text{mm} / 1100\text{mm}$)
+
+---
+
+### `POST /simulate`
+Executes dynamic what-if disaster simulation:
+- Re-scores 1 km grid zones with hypothetical rainfall parameters
+- Detects newly critical zones and mean risk increases
+- Assesses road network impact (severed corridors, impassable highways)
+- Evaluates shelter compromise and endangered bed capacity
+- Strictly flags all simulation outputs with `"simulated": true` per Rule 3
+
+---
+
 ### `GET /model/metrics`
 Returns measured evaluation metrics from 5-fold District GroupKFold validation (ROC-AUC, Precision, Recall, F1, Brier score, feature importances).
 
@@ -213,4 +232,4 @@ Returns measured evaluation metrics from 5-fold District GroupKFold validation (
 ```powershell
 python -m pytest backend/ -v
 ```
-All 46 tests execute in under 12 seconds.
+All 52 tests execute in under 10 seconds.

@@ -352,4 +352,55 @@ class SOSTriageResponse(BaseModel):
     queue: List[SOSTriageItem]
 
 
+# ===========================================================================
+# Step 7 Schemas: What-If Flood Scenario Simulation Engine
+# ===========================================================================
+
+class SimulationRequest(BaseModel):
+    """Authority parameter payload for running dynamic what-if disaster scenarios."""
+    scenario_name: str = Field(default="Custom Flood Surge Simulation", description="Human-readable scenario label")
+    district: str = Field(default="Kamrup Metropolitan", description="Target district for simulation")
+    rain_7d_mm: float = Field(..., ge=0.0, le=1500.0, description="Hypothetical 7-day cumulative rainfall in mm")
+    rain_15d_mm: float = Field(..., ge=0.0, le=2500.0, description="Hypothetical 15-day cumulative rainfall in mm")
+    rain_30d_mm: float = Field(..., ge=0.0, le=3500.0, description="Hypothetical 30-day cumulative rainfall in mm")
+    baseline_7d: float = Field(default=65.0, description="Baseline comparison 7-day rainfall")
+    baseline_15d: float = Field(default=145.0, description="Baseline comparison 15-day rainfall")
+    baseline_30d: float = Field(default=280.0, description="Baseline comparison 30-day rainfall")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "scenario_name": "Torrential Monsoon Cloudburst (+300mm)",
+                "district": "Kamrup Metropolitan",
+                "rain_7d_mm": 320.0,
+                "rain_15d_mm": 480.0,
+                "rain_30d_mm": 720.0
+            }
+        }
+    }
+
+
+class SimulationPreset(BaseModel):
+    """Preconfigured disaster scenario template for authority drills."""
+    id: str
+    name: str
+    description: str
+    severity: str
+    rain_7d_mm: float
+    rain_15d_mm: float
+    rain_30d_mm: float
+
+
+class SimulationResponse(BaseModel):
+    """Complete simulation evaluation results across zones, road corridors, shelters, and distress calls."""
+    status: str
+    scenario: Dict[str, Any]
+    zone_impact: Dict[str, Any]
+    road_network_impact: Dict[str, Any]
+    shelter_impact: Dict[str, Any]
+    sos_impact: Dict[str, Any]
+    simulated: bool = True  # Rule 3 requirement strictly maintained
+
+
+
 
