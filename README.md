@@ -107,5 +107,4 @@ All **52/52 tests** execute in under 10 seconds.
 
 ---
 
-## 👥 Team Enigma (Smart India Hackathon)
-- Developing AI/ML solutions for climate resilience and disaster response in Assam, India.
+
