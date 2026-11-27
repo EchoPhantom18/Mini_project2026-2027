@@ -281,8 +281,11 @@ export default function CitizenPanel({
                       <h3 className="text-lg font-bold text-white leading-snug">
                         {topShelter.name}
                       </h3>
-                      <p className="text-base text-emerald-400 font-medium mt-0.5">
-                        {topShelter.available_capacity} beds available · {topShelter.status}
+                      <p className="text-base text-emerald-400 font-medium mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span>{topShelter.available_capacity} beds available · {topShelter.status}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold uppercase">
+                          DEMO
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -309,17 +312,19 @@ export default function CitizenPanel({
                     </div>
                   </div>
 
-                  {topShelter.contact_phone && (
-                    <div className="pt-2 border-t border-slate-700/80 text-base text-slate-300">
-                      Helpline:{' '}
-                      <a
-                        href={`tel:${topShelter.contact_phone}`}
-                        className="text-blue-400 underline font-medium"
-                      >
-                        {topShelter.contact_phone}
-                      </a>
-                    </div>
-                  )}
+                  <div className="pt-2 border-t border-slate-700/80 text-sm text-slate-400">
+                    Route basis: <span className="text-slate-200 font-medium">Simplified road network (demo)</span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-700/80 text-base text-slate-300">
+                    National Emergency Helpline:{' '}
+                    <a
+                      href="tel:112"
+                      className="text-blue-400 underline font-semibold"
+                    >
+                      112
+                    </a>
+                  </div>
                 </div>
 
                 {/* Primary Button: Show safest route */}

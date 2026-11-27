@@ -89,7 +89,7 @@ export default function App() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [activeScenario, setActiveScenario] = useState({
-    name: 'Historical Monsoon Baseline',
+    name: 'Demo scenario: moderate rainfall (assumed)',
     description: '65mm (7d) · 145mm (15d) · 280mm (30d)',
     isSimulated: false,
     rain7d: 65,
@@ -381,7 +381,7 @@ export default function App() {
       setZonesGeoJSON(defaultZones);
       setSimulationResult(null);
       setActiveScenario({
-        name: 'Historical Monsoon Baseline',
+        name: 'Demo scenario: moderate rainfall (assumed)',
         description: '65mm (7d) · 145mm (15d) · 280mm (30d)',
         isSimulated: false,
         rain7d: 65,

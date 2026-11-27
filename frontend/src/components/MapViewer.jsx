@@ -299,11 +299,14 @@ export default function MapViewer({
                   <span>{shelter.name}</span>
                 </div>
                 <div className="mt-1.5 space-y-1">
-                  <div>Available space: <b>{shelter.available_capacity} beds</b></div>
+                  <div className="flex items-center gap-1.5">
+                    <span>Available space: <b>{shelter.available_capacity} beds</b></span>
+                    <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold uppercase">
+                      DEMO
+                    </span>
+                  </div>
                   <div>Status: <span className="font-semibold text-emerald-600">{shelter.status}</span></div>
-                  {shelter.contact_phone && (
-                    <div>Helpline: <a href={`tel:${shelter.contact_phone}`} className="text-blue-600 underline">{shelter.contact_phone}</a></div>
-                  )}
+                  <div>National Emergency: <a href="tel:112" className="text-blue-600 underline font-semibold">112</a></div>
                 </div>
                 {!isCitizen && onSetRouteEnd && (
                   <button
@@ -375,13 +378,20 @@ export default function MapViewer({
         </div>
       )}
 
+      {/* CITIZEN VIEW: Route network label when a route is shown */}
+      {isCitizen && routeData && (
+        <div className="absolute bottom-3 left-3 z-[1000] bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg px-3 py-1.5 shadow-lg text-xs text-slate-200 font-medium">
+          Simplified road network (demo)
+        </div>
+      )}
+
       {/* AUTHORITY VIEW: Floating Active Scenario Badge */}
       {!isCitizen && (
         <div className="absolute top-4 left-4 z-[1000] bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3.5 py-2.5 shadow-xl text-xs max-w-sm pointer-events-auto">
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-400 font-medium">Risk under:</span>
             <span className="font-semibold text-white truncate">
-              {activeScenario?.name || 'Historical Monsoon Baseline'}
+              {activeScenario?.name || 'Demo scenario: moderate rainfall (assumed)'}
             </span>
             {activeScenario?.isSimulated ? (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider shrink-0">
@@ -452,6 +462,9 @@ export default function MapViewer({
               <div className="flex items-center gap-2">
                 <span className="w-4 h-0.5 border-t border-dashed border-slate-400"></span>
                 <span className="text-slate-400">Shortest Route (Distance only)</span>
+              </div>
+              <div className="text-[10px] text-amber-300 font-medium pt-0.5">
+                Simplified road network (demo)
               </div>
             </div>
           )}
