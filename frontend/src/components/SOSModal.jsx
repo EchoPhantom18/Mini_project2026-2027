@@ -31,7 +31,8 @@ export default function SOSModal({ isOpen, onClose, onSubmitSOS }) {
         has_elderly: hasElderly,
         has_infants: hasInfants,
         has_medical_emergency: hasMedical,
-        notes: notes || undefined
+        notes: notes || undefined,
+        is_simulated: false
       });
       setSubmittedResult(res);
     } catch (err) {

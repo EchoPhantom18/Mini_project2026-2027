@@ -7,6 +7,8 @@ export default function AuthorityPanel({
   onUpdateSOSStatus,
   presets,
   onRunSimulation,
+  onResetScenario,
+  activeScenario,
   simulationResult,
   simulationLoading,
   onPanToLocation
@@ -160,8 +162,17 @@ export default function AuthorityPanel({
                         #{item.queue_position}
                       </span>
                       <div>
-                        <h3 className="font-bold text-xs text-white flex items-center gap-1.5">
+                        <h3 className="font-bold text-xs text-white flex items-center gap-1.5 flex-wrap">
                           <span>{item.citizen_name}</span>
+                          {item.is_simulated !== false ? (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              DEMO
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              LIVE
+                            </span>
+                          )}
                           <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold uppercase ${
                             item.priority_level === 'Critical'
                               ? 'bg-red-500/20 text-red-400 border border-red-500/30'
@@ -482,6 +493,10 @@ export default function AuthorityPanel({
           </form>
         </div>
       )}
+      {/* Platform Disclaimer Note */}
+      <div className="mt-auto p-3 border-t border-slate-800 text-[10px] text-slate-400 text-center italic bg-slate-950/60 shrink-0">
+        Model trained on Assam data; predictions are estimates.
+      </div>
     </div>
   );
 }

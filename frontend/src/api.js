@@ -97,7 +97,10 @@ export async function submitSOS(data) {
   const res = await fetch(`${API_BASE}/sos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...data, is_simulated: true })
+    body: JSON.stringify({
+      ...data,
+      is_simulated: data.is_simulated !== undefined ? data.is_simulated : false
+    })
   });
 
   if (!res.ok) {
