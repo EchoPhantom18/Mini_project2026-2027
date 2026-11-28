@@ -174,3 +174,32 @@ export async function fetchModelMetrics() {
   if (!res.ok) throw new Error("Failed to load model metrics");
   return res.json();
 }
+
+export async function queryMultiAgent(query, district = "Kamrup Metropolitan", rain7d = null, rain15d = null, rain30d = null, simulated = false) {
+  const payload = {
+    query,
+    district,
+    rain_7d_mm: rain7d ? parseFloat(rain7d) : null,
+    rain_15d_mm: rain15d ? parseFloat(rain15d) : null,
+    rain_30d_mm: rain30d ? parseFloat(rain30d) : null,
+    simulated: Boolean(simulated)
+  };
+
+  const res = await fetch(`${API_BASE}/agents/query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Multi-Agent query failed");
+  }
+  return res.json();
+}
+
+export async function fetchAgentsStatus() {
+  const res = await fetch(`${API_BASE}/agents/status`);
+  if (!res.ok) throw new Error("Failed to fetch agent status");
+  return res.json();
+}

@@ -18,8 +18,11 @@ import {
   ArrowLeft,
   ChevronRight,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  Bot
 } from 'lucide-react';
+import AIAssistantPanel from './AIAssistantPanel';
 
 function maskPhone(phone) {
   if (!phone) return '+91-98xxx-xxx00';
@@ -285,21 +288,21 @@ export default function AuthorityPanel({
         </div>
       )}
 
-      {/* 4 Tabs: SOS Queue | Teams | Shelters | What-If */}
-      <div className="grid grid-cols-4 border-b border-slate-200 bg-slate-100/80 p-1 gap-1 text-xs font-semibold shrink-0">
+      {/* 5 Tabs: SOS Queue | Teams | Shelters | What-If | AI Assistant */}
+      <div className="grid grid-cols-5 border-b border-slate-200 bg-slate-100/80 p-1 gap-1 text-[11px] font-semibold shrink-0">
         <button
           onClick={() => {
             setActiveTab('queue');
           }}
-          className={`py-2 px-1 rounded-lg text-center transition flex items-center justify-center gap-1 ${
+          className={`py-2 px-0.5 rounded-lg text-center transition flex items-center justify-center gap-1 ${
             activeTab === 'queue'
               ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
           }`}
         >
-          <span>SOS Queue</span>
+          <span className="truncate">Queue</span>
           {statusCounts.pending > 0 && (
-            <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+            <span className="w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
               {statusCounts.pending}
             </span>
           )}
@@ -307,7 +310,7 @@ export default function AuthorityPanel({
 
         <button
           onClick={() => setActiveTab('teams')}
-          className={`py-2 px-1 rounded-lg text-center transition ${
+          className={`py-2 px-0.5 rounded-lg text-center transition ${
             activeTab === 'teams'
               ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -318,7 +321,7 @@ export default function AuthorityPanel({
 
         <button
           onClick={() => setActiveTab('shelters')}
-          className={`py-2 px-1 rounded-lg text-center transition ${
+          className={`py-2 px-0.5 rounded-lg text-center transition ${
             activeTab === 'shelters'
               ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -329,13 +332,25 @@ export default function AuthorityPanel({
 
         <button
           onClick={() => setActiveTab('whatif')}
-          className={`py-2 px-1 rounded-lg text-center transition ${
+          className={`py-2 px-0.5 rounded-lg text-center transition ${
             activeTab === 'whatif'
               ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
           }`}
         >
           <span>What-If</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('assistant')}
+          className={`py-2 px-0.5 rounded-lg text-center transition flex items-center justify-center gap-1 ${
+            activeTab === 'assistant'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm font-bold'
+              : 'text-blue-700 hover:text-blue-900 hover:bg-blue-50/80'
+          }`}
+        >
+          <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
+          <span className="truncate">AI Agent</span>
         </button>
       </div>
 
@@ -1034,6 +1049,14 @@ export default function AuthorityPanel({
               </div>
             )}
           </div>
+        )}
+
+        {/* ================= TAB 5: AI DECISION-SUPPORT ASSISTANT ================= */}
+        {activeTab === 'assistant' && (
+          <AIAssistantPanel
+            activeScenario={activeScenario}
+            onPanToLocation={onPanToLocation}
+          />
         )}
       </div>
 
