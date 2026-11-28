@@ -117,30 +117,6 @@ export default function App() {
   // Teams State (reads dynamically into summary row and Teams tab)
   const [teams, setTeams] = useState(INITIAL_DEMO_TEAMS);
 
-  // Sync teams state if any SOS items are marked Dispatched
-  useEffect(() => {
-    if (!triageData?.queue) return;
-    const dispatched = triageData.queue.filter(
-      (x) => x.status?.toLowerCase() === 'dispatched' && x.assigned_team
-    );
-    if (dispatched.length > 0) {
-      setTeams((prevTeams) =>
-        prevTeams.map((team) => {
-          const match = dispatched.find((d) => d.assigned_team === team.name);
-          if (match) {
-            return {
-              ...team,
-              status: 'Dispatched',
-              assignedRequestId: match.id,
-              assignedCitizenName: match.citizen_name || `Citizen #${match.id}`
-            };
-          }
-          return team;
-        })
-      );
-    }
-  }, [triageData?.queue]);
-
   // Map spatial layers
   const [zonesGeoJSON, setZonesGeoJSON] = useState(null);
   const [baselineZonesGeoJSON, setBaselineZonesGeoJSON] = useState(null);
@@ -201,6 +177,30 @@ export default function App() {
       // Ignore storage errors
     }
   };
+
+  // Keep teams state in sync with triageData queue status
+  useEffect(() => {
+    if (!triageData?.queue) return;
+    const dispatched = triageData.queue.filter(
+      (x) => x.status?.toLowerCase() === 'dispatched' && x.assigned_team
+    );
+    if (dispatched.length > 0) {
+      setTeams((prevTeams) =>
+        prevTeams.map((team) => {
+          const match = dispatched.find((d) => d.assigned_team === team.name);
+          if (match) {
+            return {
+              ...team,
+              status: 'Dispatched',
+              assignedRequestId: match.id,
+              assignedCitizenName: match.citizen_name || `Citizen #${match.id}`
+            };
+          }
+          return team;
+        })
+      );
+    }
+  }, [triageData?.queue]);
 
   // 1. Initial Data Loading on Mount
   useEffect(() => {
