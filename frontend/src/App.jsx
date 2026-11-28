@@ -54,9 +54,92 @@ function findNearestAreaRisk(lat, lon, zonesGeoJSON) {
   return best || { risk_score: 0, risk_level: 'Low' };
 }
 
+// Demo Emergency Response Teams stationed in Kamrup Metropolitan
+export const INITIAL_DEMO_TEAMS = [
+  {
+    id: 'team-1',
+    name: 'SDRF Boat Unit 1',
+    type: 'Inflatable Motorboat',
+    base: 'Bharalumukh Riverfront',
+    capacity: 8,
+    personnel: 5,
+    status: 'Available',
+    assignedRequestId: null,
+    assignedCitizenName: null,
+    lat: 26.1760,
+    lon: 91.7280
+  },
+  {
+    id: 'team-2',
+    name: 'SDRF Boat Unit 2',
+    type: 'High-Capacity Rescue Boat',
+    base: 'Pandu River Port',
+    capacity: 12,
+    personnel: 6,
+    status: 'Available',
+    assignedRequestId: null,
+    assignedCitizenName: null,
+    lat: 26.1680,
+    lon: 91.7030
+  },
+  {
+    id: 'team-3',
+    name: 'NDRF Quick Response Team 4',
+    type: 'Amphibious Transport',
+    base: 'Khanapara Depot',
+    capacity: 16,
+    personnel: 8,
+    status: 'Available',
+    assignedRequestId: null,
+    assignedCitizenName: null,
+    lat: 26.1240,
+    lon: 91.8260
+  },
+  {
+    id: 'team-4',
+    name: 'Civil Defense Paramedic Unit',
+    type: 'Mobile Trauma Ambulance',
+    base: 'GMCH Bhangagarh',
+    capacity: 4,
+    personnel: 4,
+    status: 'Available',
+    assignedRequestId: null,
+    assignedCitizenName: null,
+    lat: 26.1610,
+    lon: 91.7700
+  }
+];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('citizen'); // 'citizen' | 'authority'
   const [health, setHealth] = useState(null);
+
+  // Teams State (reads dynamically into summary row and Teams tab)
+  const [teams, setTeams] = useState(INITIAL_DEMO_TEAMS);
+
+  // Sync teams state if any SOS items are marked Dispatched
+  useEffect(() => {
+    if (!triageData?.queue) return;
+    const dispatched = triageData.queue.filter(
+      (x) => x.status?.toLowerCase() === 'dispatched' && x.assigned_team
+    );
+    if (dispatched.length > 0) {
+      setTeams((prevTeams) =>
+        prevTeams.map((team) => {
+          const match = dispatched.find((d) => d.assigned_team === team.name);
+          if (match) {
+            return {
+              ...team,
+              status: 'Dispatched',
+              assignedRequestId: match.id,
+              assignedCitizenName: match.citizen_name || `Citizen #${match.id}`
+            };
+          }
+          return team;
+        })
+      );
+    }
+  }, [triageData?.queue]);
 
   // Map spatial layers
   const [zonesGeoJSON, setZonesGeoJSON] = useState(null);
@@ -372,6 +455,34 @@ export default function App() {
       setSosRequests(updatedQueue);
     }
 
+    // 2. Immediate optimistic update of Teams state
+    if (assignedTeam) {
+      const citizen = (triageData?.queue || []).find((x) => x.id === id);
+      const citizenName = citizen?.citizen_name || `Citizen #${id}`;
+
+      setTeams((prevTeams) =>
+        prevTeams.map((t) => {
+          if (t.name === assignedTeam) {
+            return {
+              ...t,
+              status: status === 'Dispatched' ? 'Dispatched' : (status === 'Rescued' ? 'Available' : t.status),
+              assignedRequestId: status === 'Dispatched' ? id : null,
+              assignedCitizenName: status === 'Dispatched' ? citizenName : null
+            };
+          }
+          if (t.assignedRequestId === id && status === 'Rescued') {
+            return {
+              ...t,
+              status: 'Available',
+              assignedRequestId: null,
+              assignedCitizenName: null
+            };
+          }
+          return t;
+        })
+      );
+    }
+
     try {
       await updateSOSStatus(id, status, assignedTeam, etaMin, notes);
       const freshTriage = await fetchSOSTriage().catch(() => null);
@@ -504,7 +615,7 @@ export default function App() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0"></span>
               <span className="text-slate-500 font-medium">Teams available (demo):</span>
               <span className="font-bold text-slate-900 text-sm font-mono">
-                4 teams ready
+                {teams.filter((t) => t.status === 'Available').length} of {teams.length} available
               </span>
             </div>
           </div>
@@ -547,6 +658,7 @@ export default function App() {
               triageLoading={triageLoading}
               onUpdateSOSStatus={handleUpdateSOSStatus}
               shelters={shelters}
+              teams={teams}
               presets={simulationPresets}
               onRunSimulation={handleRunSimulation}
               onResetScenario={handleResetScenario}

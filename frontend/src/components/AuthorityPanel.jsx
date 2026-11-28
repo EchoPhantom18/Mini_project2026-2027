@@ -82,6 +82,7 @@ export default function AuthorityPanel({
   triageLoading,
   onUpdateSOSStatus,
   shelters = [],
+  teams = [],
   presets = [],
   onRunSimulation,
   onResetScenario,
@@ -93,6 +94,8 @@ export default function AuthorityPanel({
   onSelectSOS
 }) {
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'teams' | 'shelters' | 'whatif'
+
+  const activeTeams = teams && teams.length > 0 ? teams : DEMO_TEAMS;
 
   // SOS Queue filters & search
   const [statusFilter, setStatusFilter] = useState('Pending'); // 'Pending' | 'Dispatched' | 'Rescued' | 'all'
@@ -233,6 +236,11 @@ export default function AuthorityPanel({
   // Open dispatch modal for specific SOS
   const handleOpenDispatch = (item) => {
     setTargetSOS(item);
+    const currTeam = activeTeams.find((t) => t.name === selectedTeam);
+    if (!currTeam || currTeam.status !== 'Available') {
+      const avail = activeTeams.find((t) => t.status === 'Available');
+      if (avail) setSelectedTeam(avail.name);
+    }
     setDispatchModalOpen(true);
   };
 
@@ -666,50 +674,111 @@ export default function AuthorityPanel({
         {/* ================= TAB 2: TEAMS ================= */}
         {activeTab === 'teams' && (
           <div className="space-y-3.5">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Assam Emergency Response Teams</h3>
-              <p className="text-xs text-slate-500">SDRF, NDRF, and Medical Units stationed in Kamrup Metropolitan</p>
+            <div className="flex items-center justify-between pb-1">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Assam Emergency Response Teams</h3>
+                <p className="text-xs text-slate-500">SDRF, NDRF, and Medical Units stationed in Kamrup Metropolitan</p>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 uppercase shrink-0">
+                DEMO
+              </span>
             </div>
 
             <div className="space-y-3">
-              {DEMO_TEAMS.map((team) => (
-                <div
-                  key={team.id}
-                  className="bg-slate-50 rounded-2xl border border-slate-200 p-3.5 space-y-2 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
-                        <Truck className="w-4 h-4" />
+              {activeTeams.map((team) => {
+                const isDispatched = team.status === 'Dispatched';
+                return (
+                  <div
+                    key={team.id}
+                    className={`bg-slate-50 rounded-2xl border ${
+                      isDispatched ? 'border-blue-300 bg-blue-50/20' : 'border-slate-200'
+                    } p-3.5 space-y-2.5 shadow-sm transition`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            isDispatched ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}
+                        >
+                          {team.type.toLowerCase().includes('boat') ? (
+                            <LifeBuoy className="w-4 h-4" />
+                          ) : team.type.toLowerCase().includes('paramedic') || team.type.toLowerCase().includes('ambulance') ? (
+                            <Activity className="w-4 h-4" />
+                          ) : (
+                            <Truck className="w-4 h-4" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-xs text-slate-900">{team.name}</h4>
+                            <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300 uppercase">
+                              DEMO
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">{team.type}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-900">{team.name}</h4>
-                        <p className="text-[11px] text-slate-500">{team.type}</p>
-                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase shrink-0 ${
+                          isDispatched
+                            ? 'bg-blue-100 text-blue-800 border-blue-300'
+                            : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        }`}
+                      >
+                        {team.status}
+                      </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase">
-                      {team.status}
-                    </span>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/80 text-slate-600">
-                    <div>Base: <b className="text-slate-800">{team.base}</b></div>
-                    <div>Capacity: <b className="text-slate-800">{team.capacity} persons</b></div>
-                    <div>Crew: <b className="text-slate-800">{team.personnel} personnel</b></div>
-                    <div>Radio: <b className="text-slate-800 font-mono">CH-07 (SDRF)</b></div>
-                  </div>
+                    {/* Assigned Request info */}
+                    {isDispatched ? (
+                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs flex items-center justify-between gap-2">
+                        <div className="text-blue-900 text-[11px]">
+                          <span className="font-medium text-slate-600">Assigned to: </span>
+                          <b className="font-bold text-blue-950">SOS #{team.assignedRequestId}</b>
+                          {team.assignedCitizenName && (
+                            <span className="text-blue-800"> ({team.assignedCitizenName})</span>
+                          )}
+                        </div>
+                        {team.assignedRequestId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveTab('queue');
+                              if (onSelectSOS) onSelectSOS(team.assignedRequestId);
+                            }}
+                            className="text-[11px] font-bold text-blue-700 hover:text-blue-900 underline shrink-0"
+                          >
+                            View in Queue
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-500 italic bg-white/70 px-2.5 py-1.5 rounded-xl border border-slate-200/60">
+                        Available · Staged at base for deployment
+                      </div>
+                    )}
 
-                  <div className="pt-1 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => onPanToLocation && onPanToLocation(team.lat, team.lon, 15)}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline transition"
-                    >
-                      Locate Base on Map
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/80 text-slate-600">
+                      <div>Base: <b className="text-slate-800">{team.base}</b></div>
+                      <div>Capacity: <b className="text-slate-800">{team.capacity} persons</b></div>
+                      <div>Crew: <b className="text-slate-800">{team.personnel} personnel</b></div>
+                      <div>Radio: <b className="text-slate-800 font-mono">CH-07 (SDRF)</b></div>
+                    </div>
+
+                    <div className="pt-0.5 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onPanToLocation && onPanToLocation(team.lat, team.lon, 15)}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline flex items-center gap-1 transition"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Locate Base on Map</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -717,9 +786,14 @@ export default function AuthorityPanel({
         {/* ================= TAB 3: SHELTERS ================= */}
         {activeTab === 'shelters' && (
           <div className="space-y-3.5">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Designated Relief Shelters</h3>
-              <p className="text-xs text-slate-500">Government relief shelters in Kamrup Metropolitan</p>
+            <div className="flex items-center justify-between pb-1">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Designated Relief Shelters</h3>
+                <p className="text-xs text-slate-500">Government relief shelters in Kamrup Metropolitan</p>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 uppercase shrink-0">
+                DEMO
+              </span>
             </div>
 
             <div className="space-y-3">
@@ -728,44 +802,80 @@ export default function AuthorityPanel({
                   Loading relief shelters...
                 </div>
               ) : (
-                shelters.map((s) => (
-                  <div
-                    key={`shelter-list-${s.id}`}
-                    className="bg-slate-50 rounded-2xl border border-slate-200 p-3.5 space-y-2 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
-                          <Home className="w-4 h-4" />
+                shelters.map((s) => {
+                  const capacity = s.capacity || 100;
+                  const occupancy = s.current_occupancy || 0;
+                  const occPct = Math.min(100, Math.round((occupancy / capacity) * 100));
+                  const barColor = occPct >= 85 ? 'bg-red-500' : occPct >= 60 ? 'bg-amber-500' : 'bg-emerald-500';
+
+                  return (
+                    <div
+                      key={`shelter-list-${s.id}`}
+                      onClick={() => onPanToLocation && onPanToLocation(s.lat, s.lon, 15)}
+                      className="bg-slate-50 hover:bg-white rounded-2xl border border-slate-200 hover:border-blue-400 p-3.5 space-y-2.5 shadow-sm hover:shadow-md cursor-pointer transition group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 group-hover:bg-blue-100 flex items-center justify-center text-emerald-700 group-hover:text-blue-700 shrink-0 transition">
+                            <Home className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-xs text-slate-900 group-hover:text-blue-700 transition">
+                              {s.name}
+                            </h4>
+                            <p className="text-[11px] text-slate-500">{s.district}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-bold text-xs text-slate-900">{s.name}</h4>
-                          <p className="text-[11px] text-slate-500">{s.district}</p>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase shrink-0 ${
+                            s.status?.toLowerCase() === 'full'
+                              ? 'bg-red-100 text-red-800 border-red-300'
+                              : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </div>
+
+                      {/* Occupancy Progress Bar */}
+                      <div className="space-y-1 bg-white/90 p-2 rounded-xl border border-slate-200/80">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 font-medium text-[11px]">Occupancy</span>
+                          <span className="font-bold text-slate-800 font-mono text-[11px]">
+                            {occupancy} / {capacity} beds ({occPct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${barColor} rounded-full transition-all duration-300`}
+                            style={{ width: `${occPct}%` }}
+                          />
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase shrink-0">
-                        {s.status}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/80 text-slate-600">
-                      <div>Space: <b className="text-slate-800">{s.available_capacity} beds (DEMO)</b></div>
-                      <div>Elevation: <b className="text-slate-800">{s.elevation_m}m</b></div>
-                      <div>Emergency: <a href="tel:112" className="text-blue-600 underline font-semibold">112</a></div>
-                      <div>Medical Post: <b className="text-slate-800">Yes</b></div>
-                    </div>
+                      {/* Specs with capacity labeled DEMO */}
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/80 text-slate-600">
+                        <div>
+                          Capacity:{' '}
+                          <b className="text-slate-800">{capacity} beds</b>{' '}
+                          <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1 py-0.2 rounded border border-amber-300">
+                            DEMO
+                          </span>
+                        </div>
+                        <div>Elevation: <b className="text-slate-800">{s.elevation_m}m</b></div>
+                        <div>Available: <b className="text-emerald-700">{s.available_capacity || (capacity - occupancy)} beds</b></div>
+                        <div>Emergency: <a href="tel:112" onClick={(e) => e.stopPropagation()} className="text-blue-600 underline font-semibold">112</a></div>
+                      </div>
 
-                    <div className="pt-1 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => onPanToLocation && onPanToLocation(s.lat, s.lon, 15)}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline transition"
-                      >
-                        Locate on Map
-                      </button>
+                      <div className="pt-0.5 flex justify-end">
+                        <span className="text-xs font-semibold text-blue-600 group-hover:text-blue-800 group-hover:underline flex items-center gap-1 transition">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>Click to zoom on map</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -944,34 +1054,43 @@ export default function AuthorityPanel({
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Assign Demo Unit:</label>
                 <div className="space-y-1.5">
-                  {DEMO_TEAMS.map((t) => (
-                    <label
-                      key={t.id}
-                      className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer text-xs transition ${
-                        selectedTeam === t.name
-                          ? 'border-blue-500 bg-blue-50/70 text-blue-950 font-semibold'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="assignedTeam"
-                          value={t.name}
-                          checked={selectedTeam === t.name}
-                          onChange={(e) => setSelectedTeam(e.target.value)}
-                          className="accent-blue-600"
-                        />
-                        <div>
-                          <p className="font-bold">{t.name}</p>
-                          <p className="text-[10px] text-slate-500">{t.base} · {t.capacity} cap</p>
+                  {activeTeams.map((t) => {
+                    const isAvail = t.status === 'Available';
+                    return (
+                      <label
+                        key={t.id}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer text-xs transition ${
+                          selectedTeam === t.name
+                            ? 'border-blue-500 bg-blue-50/70 text-blue-950 font-semibold shadow-xs'
+                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="assignedTeam"
+                            value={t.name}
+                            checked={selectedTeam === t.name}
+                            onChange={(e) => setSelectedTeam(e.target.value)}
+                            className="accent-blue-600"
+                          />
+                          <div>
+                            <p className="font-bold">{t.name}</p>
+                            <p className="text-[10px] text-slate-500">{t.base} · {t.capacity} cap</p>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        {t.status}
-                      </span>
-                    </label>
-                  ))}
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                            isAvail
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : 'text-blue-700 bg-blue-50 border-blue-200'
+                          }`}
+                        >
+                          {t.status}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
