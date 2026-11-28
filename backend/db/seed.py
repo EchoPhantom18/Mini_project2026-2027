@@ -124,21 +124,8 @@ KAMRUP_SHELTERS = [
 # Realistic distress scenarios across flood-prone neighborhoods of Guwahati (Rule 3: SIMULATED)
 DEMO_SOS_REQUESTS = [
     {
-        "citizen_name": "Rupen Deka",
-        "phone": "+91-98640-12345",
-        "lat": 26.1745,
-        "lon": 91.7760,  # Anil Nagar / Nabin Nagar (severely flood-prone)
-        "people_count": 5,
-        "has_elderly": True,
-        "has_infants": False,
-        "has_medical_emergency": True,
-        "water_depth_level": "Waist",
-        "notes": "Elderly grandmother on oxygen support, water entering ground floor rapidly.",
-        "is_simulated": True
-    },
-    {
         "citizen_name": "Minoti Das",
-        "phone": "+91-94350-67890",
+        "phone": "+91-94xxx-xxx10",
         "lat": 26.1680,
         "lon": 91.7650,  # Tarun Nagar / Rajgarh
         "people_count": 3,
@@ -146,46 +133,72 @@ DEMO_SOS_REQUESTS = [
         "has_infants": True,
         "has_medical_emergency": False,
         "water_depth_level": "Chest",
-        "notes": "Trapped on terrace with 4-month-old baby. No drinking water.",
+        "notes": "Trapped on terrace with 4-month-old baby. Needs boat pickup and drinking water.",
+        "is_simulated": True
+    },
+    {
+        "citizen_name": "Rupen Deka",
+        "phone": "+91-98xxx-xxx21",
+        "lat": 26.1745,
+        "lon": 91.7760,  # Anil Nagar / Nabin Nagar
+        "people_count": 5,
+        "has_elderly": True,
+        "has_infants": False,
+        "has_medical_emergency": True,
+        "water_depth_level": "Waist",
+        "notes": "Elderly resident on oxygen support, water entering ground floor.",
         "is_simulated": True
     },
     {
         "citizen_name": "Bhabesh Sharma",
-        "phone": "+91-98540-33445",
+        "phone": "+91-98xxx-xxx32",
         "lat": 26.1580,
-        "lon": 91.6950,  # Pandu / Maligaon near river
+        "lon": 91.6950,  # Pandu / Maligaon
         "people_count": 7,
         "has_elderly": True,
         "has_infants": True,
         "has_medical_emergency": False,
         "water_depth_level": "Knee",
-        "notes": "Water rising steadily, seeking boat evacuation to AEC or Maligaon camp.",
+        "notes": "Water rising steadily, seeking boat evacuation to Maligaon camp.",
         "is_simulated": True
     },
     {
-        "citizen_name": "Javed Ali",
-        "phone": "+91-97060-55667",
-        "lat": 26.1410,
-        "lon": 91.7910,  # Hatigaon / Sijubari
+        "citizen_name": "Ramen Boro",
+        "phone": "+91-97xxx-xxx43",
+        "lat": 26.1950,
+        "lon": 91.7980,  # Noonmati
+        "people_count": 6,
+        "has_elderly": False,
+        "has_infants": False,
+        "has_medical_emergency": False,
+        "water_depth_level": "Waist",
+        "notes": "Six adults stranded on first floor; approach road blocked.",
+        "is_simulated": True
+    },
+    {
+        "citizen_name": "Pranjal Kalita",
+        "phone": "+91-96xxx-xxx54",
+        "lat": 26.1280,
+        "lon": 91.7050,  # Gorchuk
         "people_count": 4,
         "has_elderly": False,
         "has_infants": False,
-        "has_medical_emergency": True,
-        "water_depth_level": "Waist",
-        "notes": "Severe diabetic patient needing dialysis transport urgently.",
+        "has_medical_emergency": False,
+        "water_depth_level": "Knee",
+        "notes": "Family stranded near flooded junction; requesting food and dry rations.",
         "is_simulated": True
     },
     {
         "citizen_name": "Anita Gohain",
-        "phone": "+91-94351-88990",
+        "phone": "+91-94xxx-xxx65",
         "lat": 26.1920,
-        "lon": 91.7420,  # Uzan Bazar riverfront
-        "people_count": 2,
+        "lon": 91.7420,  # Uzan Bazar
+        "people_count": 6,
         "has_elderly": False,
         "has_infants": False,
         "has_medical_emergency": False,
         "water_depth_level": "Ankle",
-        "notes": "Precautionary evacuation request due to river seepage.",
+        "notes": "Precautionary evacuation check due to river seepage.",
         "is_simulated": True
     }
 ]

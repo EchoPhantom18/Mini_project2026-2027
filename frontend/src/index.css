@@ -38,6 +38,16 @@
   background-color: #0b1120 !important;
 }
 
+.citizen-muted-map.leaflet-container,
+.authority-muted-map.leaflet-container {
+  background-color: #f8fafc !important;
+}
+
+.citizen-muted-map .leaflet-tile-pane,
+.authority-muted-map .leaflet-tile-pane {
+  filter: saturate(0.28) brightness(1.06) contrast(0.92);
+}
+
 /* Pulse animation for SOS markers */
 @keyframes pulse-ring {
   0% {

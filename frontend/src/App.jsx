@@ -60,6 +60,8 @@ export default function App() {
 
   // Map spatial layers
   const [zonesGeoJSON, setZonesGeoJSON] = useState(null);
+  const [baselineZonesGeoJSON, setBaselineZonesGeoJSON] = useState(null);
+  const [mapCompareMode, setMapCompareMode] = useState('after'); // 'after' | 'before'
   const [shelters, setShelters] = useState([]);
   const [sosRequests, setSosRequests] = useState([]);
   const [routeData, setRouteData] = useState(null);
@@ -131,7 +133,10 @@ export default function App() {
           fetchSimulationPresets().catch(() => [])
         ]);
 
-        if (zones) setZonesGeoJSON(zones);
+        if (zones) {
+          setZonesGeoJSON(zones);
+          setBaselineZonesGeoJSON(zones);
+        }
         setShelters(sList || []);
         if (triage) {
           setTriageData(triage);
@@ -358,10 +363,11 @@ export default function App() {
 
       const updatedZones = await fetchZones('Kamrup Metropolitan', rain7d, rain15d, rain30d, true);
       setZonesGeoJSON(updatedZones);
+      setMapCompareMode('after');
 
       setActiveScenario({
-        name: scenarioName || 'Simulated Monsoon Surge',
-        description: `${rain7d}mm (7d) · ${rain15d}mm (15d) · ${rain30d}mm (30d)`,
+        name: scenarioName || 'Simulated rainfall scenario',
+        description: `7d ${rain7d} mm · 15d ${rain15d} mm · 30d ${rain30d} mm`,
         isSimulated: true,
         rain7d,
         rain15d,
@@ -379,10 +385,12 @@ export default function App() {
     try {
       const defaultZones = await fetchZones('Kamrup Metropolitan');
       setZonesGeoJSON(defaultZones);
+      setBaselineZonesGeoJSON(defaultZones);
       setSimulationResult(null);
+      setMapCompareMode('after');
       setActiveScenario({
         name: 'Demo scenario: moderate rainfall (assumed)',
-        description: '65mm (7d) · 145mm (15d) · 280mm (30d)',
+        description: '7d 65 mm · 15d 145 mm · 30d 280 mm',
         isSimulated: false,
         rain7d: 65,
         rain15d: 145,
@@ -399,21 +407,71 @@ export default function App() {
     setRecenterCoords([lat, lon]);
   };
 
+  // Switch tabs and clear citizen state to fix route bleeding onto Authority view
+  const handleSwitchTab = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'authority') {
+      setUserLocation(null);
+      setRouteData(null);
+      setShelterRecommendations(null);
+      setUserAreaRisk(null);
+      setCitizenStep(1);
+      setLocationError('');
+      setShelterError('');
+      setRouteError('');
+    }
+  };
+
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans">
+    <div className="flex flex-col h-screen w-screen overflow-hidden font-sans bg-slate-50 text-slate-900">
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        health={health}
+        setActiveTab={handleSwitchTab}
         onOpenSOSModal={() => setIsSOSModalOpen(true)}
         onOpenHowToUse={() => setIsWelcomeOpen(true)}
       />
 
-      {/* Main Workspace Layout: Mobile-first (map top, panel bottom on mobile; side-by-side on desktop) */}
+      {/* Authority View Summary Row: Full labels, no abbreviations */}
+      {activeTab === 'authority' && (
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between flex-wrap gap-3 text-xs z-20 shrink-0 shadow-sm">
+          <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
+              <span className="text-slate-500 font-medium">Pending rescue:</span>
+              <span className="font-bold text-slate-900 text-sm font-mono">
+                {triageData?.summary?.pending_requests ?? 6}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+              <span className="text-slate-500 font-medium">People at risk:</span>
+              <span className="font-bold text-slate-900 text-sm font-mono">
+                {triageData?.summary?.total_people_at_risk ?? 31}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-600 shrink-0"></span>
+              <span className="text-slate-500 font-medium">Medical emergencies:</span>
+              <span className="font-bold text-slate-900 text-sm font-mono">
+                {triageData?.summary?.medical_emergencies_pending ?? 1}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0"></span>
+              <span className="text-slate-500 font-medium">Teams available (demo):</span>
+              <span className="font-bold text-slate-900 text-sm font-mono">
+                4 teams ready
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Workspace Layout: 400px panel for Authority view */}
       <div className="flex flex-col-reverse sm:flex-row flex-1 relative overflow-hidden">
         {/* Left / Bottom Control Panel */}
-        <div className="w-full sm:w-[420px] lg:w-[460px] h-[58vh] sm:h-full shrink-0 z-20 shadow-2xl">
+        <div className={`w-full ${activeTab === 'authority' ? 'sm:w-[400px]' : 'sm:w-[420px] lg:w-[460px]'} h-[58vh] sm:h-full shrink-0 z-20 shadow-lg`}>
           {activeTab === 'citizen' ? (
             <CitizenPanel
               step={citizenStep}
@@ -445,6 +503,7 @@ export default function App() {
               triageData={triageData}
               triageLoading={triageLoading}
               onUpdateSOSStatus={handleUpdateSOSStatus}
+              shelters={shelters}
               presets={simulationPresets}
               onRunSimulation={handleRunSimulation}
               onResetScenario={handleResetScenario}
@@ -460,8 +519,9 @@ export default function App() {
         <div className="flex-1 h-[42vh] sm:h-full relative">
           <MapViewer
             viewMode={activeTab}
-            zonesGeoJSON={zonesGeoJSON}
+            zonesGeoJSON={mapCompareMode === 'before' && baselineZonesGeoJSON ? baselineZonesGeoJSON : zonesGeoJSON}
             shelters={shelters}
+            recommendedShelters={shelterRecommendations?.recommended_shelters}
             sosRequests={sosRequests}
             routeData={routeData}
             routeMode={routeMode}
@@ -473,6 +533,9 @@ export default function App() {
             onSelectZone={(props) => setSelectedZone(props)}
             recenterCoords={recenterCoords}
             activeScenario={activeScenario}
+            simulationResult={simulationResult}
+            mapCompareMode={mapCompareMode}
+            onSetMapCompareMode={setMapCompareMode}
             onResetScenario={handleResetScenario}
             onSetRouteEnd={(lat, lon) => {
               handleCalculateRoute(26.1812, 91.7510, lat, lon, 15.0);
