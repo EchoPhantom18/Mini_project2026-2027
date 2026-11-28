@@ -38,9 +38,9 @@ def get_priority_level(urgency_score: float) -> str:
     """Categorizes numerical urgency score into operational priority tier."""
     if urgency_score >= 85.0:
         return "Critical"
-    elif urgency_score >= 65.0:
+    elif urgency_score >= 60.0:
         return "High"
-    elif urgency_score >= 40.0:
+    elif urgency_score >= 30.0:
         return "Moderate"
     else:
         return "Low"
@@ -174,15 +174,15 @@ def get_triage_queue(
         # Enclosing zone risk
         z_risk = zone_risk_map.get(req.zone_id, 15.0)
 
-        # Recalculate live urgency score (with temporal escalation)
+        # Recalculate live urgency score (for simulated demo requests, avoid temporal wait escalation accumulation)
         live_urgency = calculate_urgency_score(
             water_depth_level=req.water_depth_level,
             has_medical_emergency=req.has_medical_emergency,
             has_infants=req.has_infants,
             has_elderly=req.has_elderly,
             people_count=req.people_count,
-            zone_risk_score=z_risk,
-            created_at=req.created_at
+            zone_risk_score=z_risk if not req.is_simulated else 0.0,
+            created_at=req.created_at if not req.is_simulated else None
         )
 
         p_level = get_priority_level(live_urgency)

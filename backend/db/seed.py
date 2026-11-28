@@ -306,13 +306,18 @@ def seed_database():
         for s_req in DEMO_SOS_REQUESTS:
             assigned_zone = find_enclosing_zone(s_req["lat"], s_req["lon"], grid_features)
 
-            # Initial baseline urgency calculation based on depth and vulnerability
-            depth_weights = {"Ankle": 15, "Knee": 35, "Waist": 60, "Chest": 85, "Submerged": 100}
+            # Initial baseline urgency calculation based on depth and vulnerability (spread 20-95)
+            depth_weights = {"Ankle": 15, "Knee": 30, "Waist": 50, "Chest": 75, "Submerged": 90}
             base_urgency = depth_weights.get(s_req["water_depth_level"], 20)
             if s_req["has_medical_emergency"]:
-                base_urgency = min(100, base_urgency + 25)
-            if s_req["has_elderly"] or s_req["has_infants"]:
-                base_urgency = min(100, base_urgency + 15)
+                base_urgency += 25
+            if s_req["has_infants"]:
+                base_urgency += 15
+            if s_req["has_elderly"]:
+                base_urgency += 10
+            if s_req["people_count"] > 1:
+                base_urgency += min(10, s_req["people_count"] - 1)
+            base_urgency = max(20.0, min(95.0, float(base_urgency)))
 
             sos = SOSRequest(
                 citizen_name=s_req["citizen_name"],

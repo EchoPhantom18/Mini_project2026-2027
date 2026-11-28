@@ -344,13 +344,43 @@ export default function App() {
 
   // Update SOS Dispatch Lifecycle (Authority)
   const handleUpdateSOSStatus = async (id, status, assignedTeam, etaMin, notes) => {
+    // 1. Immediate optimistic UI update of queue and summary numbers
+    if (triageData?.queue) {
+      const updatedQueue = triageData.queue.map((item) =>
+        item.id === id
+          ? { ...item, status, assigned_team: assignedTeam, estimated_eta_min: etaMin }
+          : item
+      );
+      const pendingCount = updatedQueue.filter((x) => x.status?.toLowerCase() === 'pending').length;
+      const peopleAtRisk = updatedQueue
+        .filter((x) => x.status?.toLowerCase() === 'pending')
+        .reduce((sum, x) => sum + (x.people_count || 1), 0);
+      const medicalCount = updatedQueue.filter(
+        (x) => x.status?.toLowerCase() === 'pending' && x.has_medical_emergency
+      ).length;
+
+      setTriageData({
+        ...triageData,
+        queue: updatedQueue,
+        summary: {
+          ...triageData.summary,
+          pending_requests: pendingCount,
+          total_people_at_risk: peopleAtRisk,
+          medical_emergencies_pending: medicalCount
+        }
+      });
+      setSosRequests(updatedQueue);
+    }
+
     try {
       await updateSOSStatus(id, status, assignedTeam, etaMin, notes);
-      const updatedTriage = await fetchSOSTriage();
-      setTriageData(updatedTriage);
-      setSosRequests(updatedTriage.queue || []);
+      const freshTriage = await fetchSOSTriage().catch(() => null);
+      if (freshTriage) {
+        setTriageData(freshTriage);
+        setSosRequests(freshTriage.queue || []);
+      }
     } catch (err) {
-      alert(err.message || 'Failed to update SOS status');
+      console.error('Failed to update SOS status on backend:', err);
     }
   };
 
@@ -403,13 +433,26 @@ export default function App() {
     }
   };
 
-  const handlePanToLocation = (lat, lon) => {
-    setRecenterCoords([lat, lon]);
+  const [selectedSOSId, setSelectedSOSId] = useState(null);
+
+  const handleSelectSOS = (sosId) => {
+    setSelectedSOSId(sosId);
+    if (sosId) {
+      const target = (triageData?.queue || sosRequests || []).find((s) => s.id === sosId);
+      if (target) {
+        setRecenterCoords([target.lat, target.lon, 15]);
+      }
+    }
+  };
+
+  const handlePanToLocation = (lat, lon, zoom = 15) => {
+    setRecenterCoords([lat, lon, zoom]);
   };
 
   // Switch tabs and clear citizen state to fix route bleeding onto Authority view
   const handleSwitchTab = (tab) => {
     setActiveTab(tab);
+    setSelectedSOSId(null);
     if (tab === 'authority') {
       setUserLocation(null);
       setRouteData(null);
@@ -511,6 +554,8 @@ export default function App() {
               simulationResult={simulationResult}
               simulationLoading={simulationLoading}
               onPanToLocation={handlePanToLocation}
+              selectedSOSId={selectedSOSId}
+              onSelectSOS={handleSelectSOS}
             />
           )}
         </div>
@@ -537,6 +582,8 @@ export default function App() {
             mapCompareMode={mapCompareMode}
             onSetMapCompareMode={setMapCompareMode}
             onResetScenario={handleResetScenario}
+            selectedSOSId={selectedSOSId}
+            onSelectSOS={handleSelectSOS}
             onSetRouteEnd={(lat, lon) => {
               handleCalculateRoute(26.1812, 91.7510, lat, lon, 15.0);
             }}

@@ -54,14 +54,17 @@ function maskPhone(phone) {
   return `+91-${prefix2}xxx-xxx${last2}`;
 }
 
-// Custom SOS Distress Icon (Authority view only) - Clean circle, no per-marker DEMO badge
-const createSOSIcon = (urgency) => {
+// Custom SOS Distress Icon (Authority view only) - Clean circle with optional selected highlight
+const createSOSIcon = (urgency, isSelected = false) => {
   const isCritical = urgency >= 85;
+  const ringStyle = isSelected
+    ? 'background-color: #2563eb; border: 3px solid #ffffff; box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.6), 0 4px 10px rgba(0,0,0,0.3); transform: scale(1.25); z-index: 1000;'
+    : 'background-color: #dc2626; border: 2px solid white; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.5);';
 
   return L.divIcon({
-    className: 'custom-sos-marker',
+    className: `custom-sos-marker ${isSelected ? 'sos-selected' : ''}`,
     html: `
-      <div class="${isCritical ? 'pulse-sos' : ''}" style="background-color: #dc2626; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.5); border: 2px solid white; font-size: 12px; font-weight: 800;">
+      <div class="${isCritical && !isSelected ? 'pulse-sos' : ''}" style="${ringStyle} color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; transition: all 0.2s;">
         <span>${Math.round(urgency)}</span>
       </div>
     `,
@@ -71,12 +74,16 @@ const createSOSIcon = (urgency) => {
   });
 };
 
-// Cluster icon when multiple SOS markers are close together - Clean circle, no per-marker DEMO badge
-const createSOSClusterIcon = (count, maxUrgency) => {
+// Cluster icon when multiple SOS markers are close together
+const createSOSClusterIcon = (count, maxUrgency, hasSelected = false) => {
+  const ringStyle = hasSelected
+    ? 'background-color: #2563eb; border: 3px solid #ffffff; box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.6), 0 4px 10px rgba(0,0,0,0.3); transform: scale(1.2); z-index: 1000;'
+    : 'background-color: #b91c1c; border: 2px solid white; box-shadow: 0 4px 10px rgba(185, 28, 28, 0.55);';
+
   return L.divIcon({
-    className: 'custom-sos-cluster',
+    className: `custom-sos-cluster ${hasSelected ? 'cluster-selected' : ''}`,
     html: `
-      <div class="${maxUrgency >= 85 ? 'pulse-sos' : ''}" style="background-color: #b91c1c; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(185, 28, 28, 0.55); border: 2px solid white; font-size: 11px; font-weight: 800; line-height: 1.05;">
+      <div class="${maxUrgency >= 85 && !hasSelected ? 'pulse-sos' : ''}" style="${ringStyle} color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; line-height: 1.05; transition: all 0.2s;">
         <span>${count}</span>
         <span style="font-size: 8px; font-weight: 700;">SOS</span>
       </div>
@@ -106,7 +113,8 @@ function MapRecenter({ center }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, 13, { animate: true });
+      const zoom = center[2] || 15;
+      map.setView([center[0], center[1]], zoom, { animate: true });
     }
   }, [center, map]);
   return null;
@@ -164,7 +172,9 @@ export default function MapViewer({
   simulationResult,
   mapCompareMode = 'after',
   onSetMapCompareMode,
-  onResetScenario
+  onResetScenario,
+  selectedSOSId,
+  onSelectSOS
 }) {
   const defaultCenter = [26.15, 91.75];
   const geoJsonRef = useRef(null);
@@ -426,11 +436,15 @@ export default function MapViewer({
         {!isCitizen && sosClusters.map((cluster) => {
           if (cluster.items.length === 1) {
             const sos = cluster.items[0];
+            const isSelected = selectedSOSId === sos.id;
             return (
               <Marker
                 key={`sos-${sos.id}`}
                 position={[sos.lat, sos.lon]}
-                icon={createSOSIcon(sos.urgency_score)}
+                icon={createSOSIcon(sos.urgency_score, isSelected)}
+                eventHandlers={{
+                  click: () => onSelectSOS && onSelectSOS(sos.id)
+                }}
               >
                 <Popup className="custom-leaflet-popup">
                   <div className="p-1 font-sans text-slate-800">
@@ -440,7 +454,7 @@ export default function MapViewer({
                         <span>SOS Rescue #{sos.id}</span>
                       </div>
                       <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-800 border border-red-300">
-                        {sos.urgency_score}/100
+                        {Math.round(sos.urgency_score)}/100
                       </span>
                     </div>
                     <div className="mt-1.5 text-xs space-y-1">
@@ -463,11 +477,12 @@ export default function MapViewer({
           }
 
           const maxUrgency = Math.max(...cluster.items.map((x) => x.urgency_score || 0));
+          const hasSelected = cluster.items.some((x) => x.id === selectedSOSId);
           return (
             <Marker
               key={`sos-cluster-${cluster.id}`}
               position={[cluster.lat, cluster.lon]}
-              icon={createSOSClusterIcon(cluster.items.length, maxUrgency)}
+              icon={createSOSClusterIcon(cluster.items.length, maxUrgency, hasSelected)}
             >
               <Popup className="custom-leaflet-popup">
                 <div className="p-1 font-sans text-slate-800 max-w-[260px] space-y-2">
@@ -475,18 +490,19 @@ export default function MapViewer({
                     <span className="font-bold text-sm text-red-700">
                       {cluster.items.length} Nearby SOS Calls
                     </span>
-                    {hasDemo && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-300">
-                        DEMO
-                      </span>
-                    )}
                   </div>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {cluster.items.map((sos) => (
-                      <div key={sos.id} className="text-xs border-b border-slate-200 pb-1.5 last:border-b-0 last:pb-0">
-                        <div className="font-bold text-slate-900">
-                          #{sos.id} · {sos.citizen_name}{' '}
-                          <span className="text-red-700">({sos.urgency_score}/100)</span>
+                      <div
+                        key={sos.id}
+                        onClick={() => onSelectSOS && onSelectSOS(sos.id)}
+                        className={`text-xs border-b border-slate-200 pb-1.5 last:border-b-0 last:pb-0 cursor-pointer p-1 rounded transition ${
+                          selectedSOSId === sos.id ? 'bg-blue-50 border-blue-300' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="font-bold text-slate-900 flex items-center justify-between">
+                          <span>#{sos.id} · {sos.citizen_name}</span>
+                          <span className="text-red-700 font-mono">({Math.round(sos.urgency_score)})</span>
                         </div>
                         <div className="text-slate-600">
                           Water: <b>{sos.water_depth_level}</b> · People: <b>{sos.people_count}</b>
